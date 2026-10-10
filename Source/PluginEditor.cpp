@@ -184,7 +184,7 @@ HarmonicShadowEditor::HarmonicShadowEditor(HarmonicShadowProcessor& processorIns
     for (int i = 0; i < 12; ++i) tonicCombo_.addItem(noteName(i), i + 1);
     for (const auto& mode : {"Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"}) modeCombo_.addItem(mode, modeCombo_.getNumItems() + 1);
     tonicCombo_.setSelectedId(1); modeCombo_.setSelectedId(1);
-    for (auto* slider : {&darkness_, &transformation_, &density_, &measures_}) {
+    for (auto* slider : {&darkness_, &transformation_, &density_, &measures_, &lowPitch_, &highPitch_}) {
         slider->setSliderStyle(juce::Slider::LinearHorizontal);
         slider->setTextBoxStyle(juce::Slider::TextBoxRight, false, 42, 20);
         slider->setColour(juce::Slider::trackColourId, juce::Colour(0xff7780c8));
@@ -196,11 +196,16 @@ HarmonicShadowEditor::HarmonicShadowEditor(HarmonicShadowProcessor& processorIns
     transformation_.setRange(0, 100, 1); transformation_.setValue(42);
     density_.setRange(2, 5, 1); density_.setValue(4);
     measures_.setRange(2, 32, 1); measures_.setValue(8);
+    lowPitch_.setRange(24, 95, 1); lowPitch_.setValue(42);
+    highPitch_.setRange(36, 108, 1); highPitch_.setValue(84);
     darknessLabel_.setText("Darkness", juce::dontSendNotification);
     transformationLabel_.setText("Transformation", juce::dontSendNotification);
     densityLabel_.setText("Chord density", juce::dontSendNotification);
     measuresLabel_.setText("Bars", juce::dontSendNotification);
-    for (auto* label : {&darknessLabel_, &transformationLabel_, &densityLabel_, &measuresLabel_}) label->setColour(juce::Label::textColourId, juce::Colour(0xffabb4c2));
+    lowPitchLabel_.setText("Low note", juce::dontSendNotification);
+    highPitchLabel_.setText("High note", juce::dontSendNotification);
+    for (auto* label : {&darknessLabel_, &transformationLabel_, &densityLabel_, &measuresLabel_, &lowPitchLabel_, &highPitchLabel_})
+        label->setColour(juce::Label::textColourId, juce::Colour(0xffabb4c2));
 
     tensionCurve_.setText("0.20, 0.35, 0.50, 0.75, 0.95, 0.45, 0.20", false);
     tensionCurve_.setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xff20232a));
@@ -247,13 +252,25 @@ HarmonicShadowEditor::HarmonicShadowEditor(HarmonicShadowProcessor& processorIns
     preserveCommon_.onClick = persist;
     changeRhythm_.onClick = persist;
     preserveBass_.onClick = persist;
-    for (auto* slider : {&darkness_, &transformation_, &density_, &measures_}) slider->onValueChange = persist;
+    for (auto* slider : {&darkness_, &transformation_, &density_, &measures_, &lowPitch_, &highPitch_}) slider->onValueChange = persist;
+    lowPitch_.onValueChange = [this, persist] {
+        if (highPitch_.getValue() < lowPitch_.getValue() + 12)
+            highPitch_.setValue(lowPitch_.getValue() + 12, juce::dontSendNotification);
+        persist();
+    };
+    highPitch_.onValueChange = [this, persist] {
+        if (lowPitch_.getValue() > highPitch_.getValue() - 12)
+            lowPitch_.setValue(highPitch_.getValue() - 12, juce::dontSendNotification);
+        persist();
+    };
 
     const auto saved = processor_.coordinator().collect();
     moodCombo_.setSelectedId(static_cast<int>(saved.controls.mood) + 1, juce::dontSendNotification);
     darkness_.setValue(saved.controls.darkness, juce::dontSendNotification);
     transformation_.setValue(saved.controls.transformation, juce::dontSendNotification);
     density_.setValue(saved.controls.density, juce::dontSendNotification);
+    lowPitch_.setValue(saved.controls.lowPitch, juce::dontSendNotification);
+    highPitch_.setValue(saved.controls.highPitch, juce::dontSendNotification);
     preserveCommon_.setToggleState(saved.controls.preserveCommonTones, juce::dontSendNotification);
     preserveBass_.setToggleState(saved.controls.preserveBass, juce::dontSendNotification);
     changeRhythm_.setToggleState(saved.controls.changeHarmonicRhythm, juce::dontSendNotification);
@@ -276,7 +293,9 @@ HarmonicShadowEditor::HarmonicShadowEditor(HarmonicShadowProcessor& processorIns
     addAndMakeVisible(partLabel_); addAndMakeVisible(partName_); addAndMakeVisible(captureButton_); addAndMakeVisible(clearButton_);
     addAndMakeVisible(targetCombo_); addAndMakeVisible(moodCombo_); addAndMakeVisible(tonicCombo_); addAndMakeVisible(modeCombo_);
     addAndMakeVisible(darkness_); addAndMakeVisible(transformation_); addAndMakeVisible(density_); addAndMakeVisible(measures_);
+    addAndMakeVisible(lowPitch_); addAndMakeVisible(highPitch_);
     addAndMakeVisible(darknessLabel_); addAndMakeVisible(transformationLabel_); addAndMakeVisible(densityLabel_); addAndMakeVisible(measuresLabel_);
+    addAndMakeVisible(lowPitchLabel_); addAndMakeVisible(highPitchLabel_);
     addAndMakeVisible(tensionCurve_); addAndMakeVisible(scratchMode_); addAndMakeVisible(preserveCommon_); addAndMakeVisible(changeRhythm_); addAndMakeVisible(preserveBass_);
     addAndMakeVisible(chordCorrectionLabel_); addAndMakeVisible(chordCorrection_); addAndMakeVisible(applyCorrections_);
     addAndMakeVisible(generateButton_); addAndMakeVisible(suggestionsViewport_); addAndMakeVisible(*pianoRoll_);
@@ -294,7 +313,7 @@ void HarmonicShadowEditor::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(10.0f), 12.0f, 1.0f);
     g.setColour(juce::Colour(0xffaab3c1));
     g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
-    g.drawText("PHRASE TENSION", 20, 185, 110, 18, juce::Justification::centredLeft);
+    g.drawText("TENSION CURVE", 490, 130, 120, 15, juce::Justification::centredLeft);
     g.drawText("CAPTURED MIDI", 20, 284, 130, 18, juce::Justification::centredLeft);
     g.drawText("HARMONIC CONTEXT", 20, getHeight() - 248, 160, 18, juce::Justification::centredLeft);
     g.drawText("DRAG A SUGGESTION INTO LOGIC", 20, getHeight() - 128, 230, 18, juce::Justification::centredLeft);
@@ -323,6 +342,8 @@ void HarmonicShadowEditor::resized() {
     const int generateX = rowRight - generateWidth;
     tensionCurve_.setBounds(490, 150, std::max(110, generateX - 500), 24);
     generateButton_.setBounds(generateX, 148, generateWidth, 29);
+    lowPitchLabel_.setBounds(20, 184, 68, 22); lowPitch_.setBounds(88, 181, 170, 27);
+    highPitchLabel_.setBounds(272, 184, 70, 22); highPitch_.setBounds(340, 181, 170, 27);
     status_.setBounds(20, 213, getWidth() - 40, 28);
     chordCorrectionLabel_.setBounds(20, 247, 110, 25);
     chordCorrection_.setBounds(132, 247, std::max(240, getWidth() - 282), 25);
@@ -348,6 +369,8 @@ Controls HarmonicShadowEditor::readControls() const {
     c.preserveCommonTones = preserveCommon_.getToggleState();
     c.preserveBass = preserveBass_.getToggleState();
     c.changeHarmonicRhythm = changeRhythm_.getToggleState();
+    c.lowPitch = juce::roundToInt(lowPitch_.getValue());
+    c.highPitch = juce::roundToInt(highPitch_.getValue());
     juce::StringArray values; values.addTokens(tensionCurve_.getText(), ",", "");
     for (const auto& value : values) if (value.trim().isNotEmpty()) c.tensionCurve.push_back(std::clamp(value.getDoubleValue(), 0.0, 1.0));
     return c;
@@ -359,6 +382,8 @@ void HarmonicShadowEditor::refreshSnapshot(bool forceAnalysis) {
     darkness_.setValue(snapshot_.controls.darkness, juce::dontSendNotification);
     transformation_.setValue(snapshot_.controls.transformation, juce::dontSendNotification);
     density_.setValue(snapshot_.controls.density, juce::dontSendNotification);
+    lowPitch_.setValue(snapshot_.controls.lowPitch, juce::dontSendNotification);
+    highPitch_.setValue(snapshot_.controls.highPitch, juce::dontSendNotification);
     preserveCommon_.setToggleState(snapshot_.controls.preserveCommonTones, juce::dontSendNotification);
     preserveBass_.setToggleState(snapshot_.controls.preserveBass, juce::dontSendNotification);
     changeRhythm_.setToggleState(snapshot_.controls.changeHarmonicRhythm, juce::dontSendNotification);
@@ -438,6 +463,8 @@ void HarmonicShadowEditor::updateAnalysisText() {
     for (size_t i = 0; i < analysis_.chords.size(); ++i) {
         if (i) text += "  →  ";
         text += juce::String(analysis_.chords[i].label);
+        if (!analysis_.chords[i].function.empty())
+            text += " [" + juce::String(analysis_.chords[i].function) + "]";
     }
     juce::String editable;
     for (size_t i = 0; i < analysis_.chords.size(); ++i) {

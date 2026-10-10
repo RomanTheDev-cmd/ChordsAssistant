@@ -116,6 +116,11 @@ int main() {
         for(const auto& n:v.notes) assert(n.pitch<55);
     }
     verifyFiveVariants(separate,4);
+    Controls bounded; bounded.lowPitch=55; bounded.highPitch=72;
+    const auto boundedVariants=generateVariations(separate,analysis,4,bounded);
+    assert(boundedVariants.size()==5);
+    for (const auto& variant:boundedVariants) for (const auto& note:variant.notes)
+        assert(note.pitch>=55 && note.pitch<=72);
     Controls changedRhythm; changedRhythm.changeHarmonicRhythm=true;
     auto rhythmic=generateVariations(tonal,analyzeSession(tonal),1,changedRhythm);
     assert(rhythmic.size()==5 && rhythmic.front().chords.size()>=7);
