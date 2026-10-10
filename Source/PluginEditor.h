@@ -31,8 +31,8 @@ private:
     juce::TextButton applyCorrections_ {"Apply chords"};
     juce::ToggleButton scratchMode_ {"Generate from key (secondary mode)"};
     juce::ToggleButton preserveCommon_ {"Keep common tones"}, changeRhythm_ {"Change harmonic rhythm"}, preserveBass_ {"Keep bass rhythm"};
-    juce::Slider darkness_, transformation_, density_, measures_;
-    juce::Label darknessLabel_, transformationLabel_, densityLabel_, measuresLabel_;
+    juce::Slider darkness_, transformation_, density_, measures_, lowPitch_, highPitch_;
+    juce::Label darknessLabel_, transformationLabel_, densityLabel_, measuresLabel_, lowPitchLabel_, highPitchLabel_;
     juce::Viewport suggestionsViewport_;
     juce::Component suggestionsContent_;
     juce::OwnedArray<juce::Component> suggestionRows_;
