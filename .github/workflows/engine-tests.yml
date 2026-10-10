@@ -31,3 +31,11 @@ jobs:
           -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
       - name: Build Logic AU MIDI FX
         run: cmake --build build-au --target HarmonicShadow_AU --config Release --parallel 2
+      - name: Ad-hoc sign AU component
+        run: codesign --force --deep --sign - "build-au/HarmonicShadow_artefacts/Release/AU/Harmonic Shadow.component"
+      - name: Upload arm64 AU component
+        uses: actions/upload-artifact@v4
+        with:
+          name: Harmonic-Shadow-AU-arm64
+          path: build-au/HarmonicShadow_artefacts/Release/AU/Harmonic Shadow.component
+          if-no-files-found: error

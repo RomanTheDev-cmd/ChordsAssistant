@@ -504,6 +504,7 @@ void HarmonicShadowEditor::applyChordCorrections() {
         analysis_.chords[i].root = parsed[i].first;
         analysis_.chords[i].quality = parsed[i].second;
         analysis_.chords[i].label = chordName(parsed[i].first, parsed[i].second);
+        analysis_.chords[i].function.clear();
     }
     processor_.coordinator().setChordOverrides(analysis_.chords);
     snapshot_.manualChordOverrides = analysis_.chords;
