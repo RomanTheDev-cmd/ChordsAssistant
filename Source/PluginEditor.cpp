@@ -48,7 +48,7 @@ public:
         juce::String progression;
         for (size_t i = 0; i < variation_.chords.size(); ++i) {
             if (i) progression += "   →   ";
-            progression += variation_.chords[i].label;
+            progression += juce::String(variation_.chords[i].label);
         }
         g.setColour(juce::Colour(0xffafb7c5));
         g.setFont(juce::FontOptions(12.0f));
@@ -154,8 +154,8 @@ private:
     Session session_;
 };
 
-HarmonicShadowEditor::HarmonicShadowEditor(HarmonicShadowProcessor& processor)
-    : AudioProcessorEditor(&processor), processor_(processor), pianoRoll_(std::make_unique<PianoRoll>()) {
+HarmonicShadowEditor::HarmonicShadowEditor(HarmonicShadowProcessor& processorInstance)
+    : AudioProcessorEditor(&processorInstance), processor_(processorInstance), pianoRoll_(std::make_unique<PianoRoll>()) {
     setSize(1180, 780);
     setResizable(true, true);
     setResizeLimits(960, 660, 1800, 1200);
@@ -433,23 +433,23 @@ void HarmonicShadowEditor::updateAnalysisText() {
         context_.setText("No phrase analyzed yet. Insert this MIDI FX on each part you want included, start capture, then play the phrase through Logic.", juce::dontSendNotification);
         return;
     }
-    juce::String text = "Estimated center: " + noteName(analysis_.tonic) + " " + modeName(analysis_.mode)
+    juce::String text = juce::String("Estimated center: ") + juce::String(noteName(analysis_.tonic)) + " " + juce::String(modeName(analysis_.mode))
         + "   ·   confidence " + juce::String(analysis_.keyConfidence * 100.0, 0) + "%\nChord path: ";
     for (size_t i = 0; i < analysis_.chords.size(); ++i) {
         if (i) text += "  →  ";
-        text += analysis_.chords[i].label;
+        text += juce::String(analysis_.chords[i].label);
     }
     juce::String editable;
     for (size_t i = 0; i < analysis_.chords.size(); ++i) {
         if (i) editable += ", ";
-        editable += analysis_.chords[i].label;
+        editable += juce::String(analysis_.chords[i].label);
     }
     chordCorrection_.setText(editable, false);
     text += "\nParts: ";
     for (size_t i = 0; i < snapshot_.session.tracks.size(); ++i) {
         if (i) text += "   ·   ";
         const auto& track = snapshot_.session.tracks[i];
-        text += track.name + " " + juce::String(static_cast<int>(track.notes.size())) + " notes";
+        text += juce::String(track.name) + " " + juce::String(static_cast<int>(track.notes.size())) + " notes";
     }
     context_.setText(text, juce::dontSendNotification);
 }

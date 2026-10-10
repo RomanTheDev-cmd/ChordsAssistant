@@ -91,7 +91,7 @@ void HarmonicShadowProcessor::getStateInformation(juce::MemoryBlock& destData) {
     state.setProperty("trackLabel", trackLabel_, nullptr);
     state.setProperty("instanceId", static_cast<int64>(trackId_), nullptr);
     const auto snapshot = coordinator().collect();
-    state.setProperty("sessionToken", snapshot.sessionToken, nullptr);
+    state.setProperty("sessionToken", juce::String(snapshot.sessionToken), nullptr);
     juce::ValueTree settings("Settings");
     settings.setProperty("mood", static_cast<int>(snapshot.controls.mood), nullptr);
     settings.setProperty("darkness", snapshot.controls.darkness, nullptr);
@@ -123,7 +123,7 @@ void HarmonicShadowProcessor::getStateInformation(juce::MemoryBlock& destData) {
     for (const auto& sourceTrack : snapshot.session.tracks) {
         juce::ValueTree track("Track");
         track.setProperty("id", static_cast<int64>(sourceTrack.id), nullptr);
-        track.setProperty("name", sourceTrack.name, nullptr);
+        track.setProperty("name", juce::String(sourceTrack.name), nullptr);
         for (const auto& sourceNote : sourceTrack.notes) {
             juce::ValueTree note("Note");
             note.setProperty("start", sourceNote.startBeat, nullptr);
@@ -159,7 +159,8 @@ void HarmonicShadowProcessor::setStateInformation(const void* data, int sizeInBy
 
         CaptureSnapshot snapshot;
         snapshot.sessionToken = state.getProperty("sessionToken", "").toString().toStdString();
-        const auto savedInstanceId = static_cast<std::uint32_t>(std::max<int64>(1, state.getProperty("instanceId", trackId_)));
+        const auto savedInstanceId = static_cast<std::uint32_t>(std::max<int64>(1,
+            state.getProperty("instanceId", static_cast<int64>(trackId_))));
         const auto settings = state.getChildWithName("Settings");
         if (settings.isValid()) {
             snapshot.controls.mood = static_cast<Mood>(std::clamp(static_cast<int>(settings.getProperty("mood", 0)), 0, 7));
