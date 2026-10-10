@@ -1,6 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include <algorithm>
+
 using namespace harmonic_shadow;
 
 HarmonicShadowProcessor::HarmonicShadowProcessor()
@@ -157,7 +159,7 @@ void HarmonicShadowProcessor::setStateInformation(const void* data, int sizeInBy
 
         CaptureSnapshot snapshot;
         snapshot.sessionToken = state.getProperty("sessionToken", "").toString().toStdString();
-        const auto savedInstanceId = static_cast<std::uint32_t>(std::max<int64>(0, state.getProperty("instanceId", trackId_)));
+        const auto savedInstanceId = static_cast<std::uint32_t>(std::max<int64>(1, state.getProperty("instanceId", trackId_)));
         const auto settings = state.getChildWithName("Settings");
         if (settings.isValid()) {
             snapshot.controls.mood = static_cast<Mood>(std::clamp(static_cast<int>(settings.getProperty("mood", 0)), 0, 7));

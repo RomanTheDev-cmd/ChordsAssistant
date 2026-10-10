@@ -1,6 +1,7 @@
 #include "PluginEditor.h"
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 
 using namespace harmonic_shadow;
 
@@ -71,7 +72,7 @@ public:
         dir.createDirectory();
         const auto safeTarget = juce::File::createLegalFileName(variation_.targetTrack);
         const auto safeName = juce::File::createLegalFileName(variation_.name);
-        auto midiFile = dir.getChildFile(safeTarget + " - " + safeName + ".mid");
+        auto midiFile = dir.getChildFile(safeTarget + " - " + safeName + " - " + juce::Uuid().toString() + ".mid");
         if (!bytes.empty() && midiFile.replaceWithData(bytes.data(), bytes.size())) {
             juce::StringArray files;
             files.add(midiFile.getFullPathName());
@@ -354,6 +355,25 @@ Controls HarmonicShadowEditor::readControls() const {
 
 void HarmonicShadowEditor::refreshSnapshot(bool forceAnalysis) {
     snapshot_ = processor_.coordinator().collect();
+    moodCombo_.setSelectedId(static_cast<int>(snapshot_.controls.mood) + 1, juce::dontSendNotification);
+    darkness_.setValue(snapshot_.controls.darkness, juce::dontSendNotification);
+    transformation_.setValue(snapshot_.controls.transformation, juce::dontSendNotification);
+    density_.setValue(snapshot_.controls.density, juce::dontSendNotification);
+    preserveCommon_.setToggleState(snapshot_.controls.preserveCommonTones, juce::dontSendNotification);
+    preserveBass_.setToggleState(snapshot_.controls.preserveBass, juce::dontSendNotification);
+    changeRhythm_.setToggleState(snapshot_.controls.changeHarmonicRhythm, juce::dontSendNotification);
+    scratchMode_.setToggleState(snapshot_.scratchEnabled, juce::dontSendNotification);
+    tonicCombo_.setSelectedId(snapshot_.scratchTonic + 1, juce::dontSendNotification);
+    modeCombo_.setSelectedId(static_cast<int>(snapshot_.scratchMode) + 1, juce::dontSendNotification);
+    measures_.setValue(snapshot_.scratchMeasures, juce::dontSendNotification);
+    if (!snapshot_.controls.tensionCurve.empty()) {
+        juce::String curve;
+        for (size_t i = 0; i < snapshot_.controls.tensionCurve.size(); ++i) {
+            if (i) curve += ", ";
+            curve += juce::String(snapshot_.controls.tensionCurve[i], 3);
+        }
+        if (!tensionCurve_.hasKeyboardFocus(true) && curve != tensionCurve_.getText()) tensionCurve_.setText(curve, false);
+    }
     const auto count = snapshot_.eventCount;
     const bool capturing = snapshot_.capturing;
     captureButton_.setButtonText(capturing ? "Stop & analyze" : "Start capture");
@@ -516,7 +536,6 @@ void HarmonicShadowEditor::rebuildRows() {
 }
 
 void HarmonicShadowEditor::timerCallback() {
-    persistPreferences();
     refreshSnapshot(false);
 }
 
