@@ -16,3 +16,18 @@ jobs:
         run: cmake --build build --parallel
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  macos-au-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure arm64 AU
+        run: >-
+          cmake -S . -B build-au
+          -DHARMONIC_SHADOW_BUILD_PLUGIN=ON
+          -DHARMONIC_SHADOW_BUILD_TESTS=OFF
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES=arm64
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+      - name: Build Logic AU MIDI FX
+        run: cmake --build build-au --target HarmonicShadow_AU --config Release --parallel 2
